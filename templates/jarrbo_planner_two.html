@@ -1,0 +1,181 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Two grids demo</title>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+
+  <!-- Jarrbo css amendments --> 
+  <link rel="stylesheet" href="{% static "css/jarrbo_gridstack.css" %}" />
+
+  <!-- We will use version 1.1.0 iso of the latest (1.2.0) because lock property does not work anymore as documented. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@1.1.0/dist/gridstack-extra.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/gridstack@1.1.0/dist/gridstack.all.js"></script>
+</head>
+
+<body>
+  <div class="container-fluid">
+    <h1>Programma datum</h1>
+
+    <div class="row">
+      <div class="col-md-2">
+        <div class="grid-stack grid-stack-5">
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="grid-stack grid-stack-5">
+          </div>
+      </div>
+      <div class="col-md-2">
+        <div class="grid-stack grid-stack-5">
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="grid-stack grid-stack-5">
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="grid-stack grid-stack-5">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var options = {
+      column: 5,
+      acceptWidgets: true,
+	  disableResize: true,
+//	  cellHeight: 1,
+//	  verticalMargin: 10,
+	  cellHeight: 10,
+	  verticalMargin: 0,
+	  float: true,
+    };
+
+	var matchdate = new Date(2020,08,15);
+	
+	const start = new Date(2020,08,15,08,30,00);
+	const end = new Date(2020,08,15,17,0,0);
+	const granularity = 10;
+	const startminutes = 60*start.getHours()+start.getMinutes();
+	const endminutes = 60*end.getHours()+end.getMinutes();
+	
+	options.row = ~~((endminutes-startminutes)/granularity) + 1
+	
+    var grids = GridStack.initAll(options);
+
+    var widgets = [
+      {grid: 1, team: "JO9-1", hr: 12, mn: 0, x: 0, y: 0, width: 1,},
+      {grid: 1, team: "JO9-3", x: 1, y: 0, width: 1,},
+      {grid: 1, team: "JO9-4", x: 3, y: 0, width: 1,},
+      {grid: 1, team: "JO12-1", x: 0, y: 0, width: 2,},
+      {grid: 1, team: "JO12-2", x: 2, y: 0, width: 2,},
+      {grid: 2, team: "JO19-2", x: 0, y: 0, width: 4,},
+      {grid: 2, team: "JO19-1", x: 0, y: 15, width: 4,},
+      {grid: 2, team: "Zat-1", x: 0, y: 5, width: 4, noMove:true,},
+    ];
+	
+	var matchdurations = {
+	    'zon-': 110,
+		'zat-': 110,
+		'JO19': 110,
+		'MO19': 110,
+		'JO18': 110,
+		'JO17': 100,
+		'MO17': 100,
+		'JO16': 100,
+		'JO15': 90,
+		'MO15': 90,
+		'JO14': 90,
+		'JO13': 80,
+		'MO13': 80,
+		'JO12': 80,
+		'JO11': 80,
+		'MO11': 80,
+		'JO10': 70,
+		'JO9-': 60,
+		'JO8-': 60,
+	};
+	
+	function getHeight(teamname) {
+	  cat = teamname.substring(0, 4);
+	  res = matchdurations[cat];
+	  if (res) {
+	    return ~~(res/granularity)
+	  } else {
+	    return ~~(110/granularity)
+	  };
+	};
+	
+	function showtime(y) {
+	  d = new Date(2020,08,15);
+	  matchminutes = startminutes + y*10;
+	  d.setMinutes(matchminutes);
+	  h = d.getHours();
+	  m = d.getMinutes();
+	  if (m < 10) {m = "0"+ m};
+	  return h+":"+m
+	}
+
+    function log(id, type, items) {
+      var str = '';
+      items.forEach(function(item) { 
+	    str += ' (x,y)=' + item.x + ',' + item.y;
+		item.locked = true
+		ele = item.el.firstChild
+		ele.innerText = widgets[ele.id].team + "\n" + showtime(item.y);
+		});     
+    }
+	
+    grids.forEach(function (grid, i) {
+      grid.on('added', function(e, items) { log(i, ' added ', items) });
+      grid.on('removed', function(e, items) { log(i, ' removed ', items) });
+      grid.on('change', function(e, items) { log(i, ' change ', items) });
+    });
+
+    widgets.forEach(function (node, index) {
+	  var outdiv = document.createElement("Div");
+	  var indiv = document.createElement("Div");
+	  indiv.id = index;
+	  indiv.team = node.team;
+	  indiv.classList.add("grid-stack-item-content");
+	  outdiv.appendChild(indiv);
+	  node.height = getHeight(node.team);
+	  node.x = node.x + 1;
+	  grids[node.grid].addWidget(outdiv, node);
+    });
+
+	var t = new Date();
+	t = start;
+	for (t.setMinutes(0); 
+		 t < end;
+		 t.setMinutes(t.getMinutes() + 30)) {
+	  tminutes = 60*t.getHours()+ t.getMinutes();
+      grids.forEach(function (grid, i) {  
+		  if (tminutes >= startminutes) {
+			var outdiv = document.createElement("Div");
+			var indiv = document.createElement("Div");
+			indiv.classList.add("grid-stack-item-content");
+			indiv.classList.add("timeline");
+			if (t.getMinutes() == 0) {
+			  indiv.classList.add("full-hour");
+			  indiv.innerText = t.getHours();
+			} else {
+			  indiv.classList.add("half-hour");    
+			}
+			outdiv.appendChild(indiv);
+			yvalue = ~~((tminutes - startminutes)/granularity)
+			var node = {x: 0, y: yvalue, width: 1, height: 3, noMove: true, };
+			grid.addWidget(outdiv, node);
+		  };
+      });  
+	};
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Two grids demo</title>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+
+  <!-- Jarrbo css amendments --> 
+  <link rel="stylesheet" href="{% static "css/jarrbo_gridstack.css" %}" />
+
+  <!-- We will use version 1.1.0 iso of the latest (1.2.0) because lock property does not work anymore as documented. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@1.1.0/dist/gridstack-extra.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/gridstack@1.1.0/dist/gridstack.all.js"></script>
+
+  <!-- papa parse for parsing csv files -->
+  <script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>
+  
+  <!-- jQuery from Google CDN -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  
+  <!-- script that parses the selected file into the data object -->
+  <script>
+    var matches = [];
+
+	function initMatchWidget(match, index) {
+	  if (match.Thuisteam) {
+	    var node;
+		time = match.Tijd.split(":");
+		hr = parseInt(time[0]);
+		min = parseInt(time[1]);
+		minutes = 60*hr + min;
+		y = ~~((minutes-startminutes)/granularity)
+		grid = veldnummers[match.Veld];
+		x = 1;
+		if (match.Opmerkingen) {
+		  x = parseInt(match.Opmerkingen);
+		};
+//		c = match.Thuisteam.split(" ");
+//		teamname = getFullTeamname(c[c.length - 1]);
+		teamname = getFullTeamname(match.Thuisteam);
+//		teamname = c[c.length - 1];
+//		if (!(isNaN(teamname))) {
+//		  teamname = 'sen-' + teamname
+//		};
+	    height = getHeight(teamname);
+		width = getWidth(teamname);
+	    var outdiv = document.createElement("Div");
+	    var indiv = document.createElement("Div");
+	    indiv.id = index;
+	    indiv.classList.add("grid-stack-item-content");
+	    outdiv.appendChild(indiv);
+		node = {x: x, y: y, height: height, width: width};
+	    grids[grid].addWidget(outdiv, node);
+	  };
+	};
+
+    function handleFileSelect(evt) {
+      var file = evt.target.files[0];
+  
+      Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        complete: function(results) {
+          matches = results.data;
+		  matches.forEach(initMatchWidget);
+        }
+      });
+    }
+ 
+    $(document).ready(function(){
+      $("#csv-file").change(handleFileSelect);
+    });
+  </script>  
+  
+</head>
+
+<body>
+  <div class="container-fluid">
+<input type="file" id="csv-file" name="files"/>
+    <h1>Programma datum</h1>
+
+    <div class="row">
+      <div class="col-md-2">
+        <div class="grid-stack grid-stack-5">
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="grid-stack grid-stack-5">
+          </div>
+      </div>
+      <div class="col-md-2">
+        <div class="grid-stack grid-stack-5">
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="grid-stack grid-stack-5">
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="grid-stack grid-stack-5">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var options = {
+      column: 5,
+      acceptWidgets: true,
+	  disableResize: true,
+	  cellHeight: 5,
+	  verticalMargin: 0,
+	  float: true,
+    };
+
+	var matchdate = new Date(2020,08,15);
+	
+	const start = new Date(2020,08,15,08,30,00);
+	const end = new Date(2020,08,15,19,0,0);
+	const granularity = 5;
+	const startminutes = 60*start.getHours()+start.getMinutes();
+	const endminutes = 60*end.getHours()+end.getMinutes();
+	
+	options.row = ~~((endminutes-startminutes)/granularity) + 1
+	
+    var grids = GridStack.initAll(options);
+	
+	var teaminfo = {
+		'sen-': [110,4],
+	    'zon-': [110,4],
+		'zat-': [110,4],
+		'JO19': [110,4],
+		'MO19': [110,4],
+		'JO18': [110,4],
+		'JO17': [100,4],
+		'MO17': [100,4],
+		'JO16': [100,4],
+		'JO15': [90,4],
+		'MO15': [90,4],
+		'JO14': [90,4],
+		'JO13': [80,4],
+		'MO13': [80,4],
+		'JO12': [80,2],
+		'JO11': [80,2],
+		'MO11': [80,2],
+		'JO10': [70,1],
+		'JO9-': [60,1],
+		'JO8-': [60,1],
+		'Mini': [80,4],
+	};
+	
+	var veldnummers = {
+		'veld 1': 0,
+		'veld 2': 1,
+		'veld 3': 2,
+		'veld 4': 3,
+		'veld 5': 4,
+	};
+
+	function getFullTeamname(team) {
+		c = team.split(" ");
+		teamname = c[c.length - 1];
+		if (!(isNaN(teamname))) {
+		  fullteamname = 'sen-' + teamname;
+		  return fullteamname;
+		};
+		return teamname;
+	};
+		
+	function getHeight(teamname) {
+	  cat = teamname.substring(0, 4);
+	  res = teaminfo[cat][0];
+	  if (res) {
+	    return ~~(res/granularity)
+	  } else {
+	    return ~~(110/granularity)
+	  };
+	};
+	
+	function getWidth(teamname) {
+	  cat = teamname.substring(0, 4);
+	  res = teaminfo[cat][1];
+	  if (res) {
+	    return res
+	  } else {
+	    return 4
+	  };
+	};
+	
+	function showtime(y) {
+	  d = new Date(2020,08,15);
+	  matchminutes = startminutes + y*granularity;
+	  d.setMinutes(matchminutes);
+	  h = d.getHours();
+	  m = d.getMinutes();
+	  if (m < 10) {m = "0"+ m};
+	  return h+":"+m
+	}
+
+    function log(id, type, items) {
+      var str = '';
+      items.forEach(function(item) { 
+	    str += ' (x,y)=' + item.x + ',' + item.y;
+		item.locked = true
+		ele = item.el.firstChild
+		if (typeof matches[ele.id] !== 'undefined') {
+		  ele.innerText = getFullTeamname(matches[ele.id].Thuisteam) + "\n" + showtime(item.y);
+		};
+		});     
+    }
+	
+    grids.forEach(function (grid, i) {
+      grid.on('added', function(e, items) { log(i, ' added ', items) });
+      grid.on('removed', function(e, items) { log(i, ' removed ', items) });
+      grid.on('change', function(e, items) { log(i, ' change ', items) });
+    });
+
+	var t = new Date();
+	t = start;
+	for (t.setMinutes(0); 
+		 t < end;
+		 t.setMinutes(t.getMinutes() + 30)) {
+	  tminutes = 60*t.getHours()+ t.getMinutes();
+      grids.forEach(function (grid, i) {  
+		  if (tminutes >= startminutes) {
+			var outdiv = document.createElement("Div");
+			var indiv = document.createElement("Div");
+			indiv.classList.add("grid-stack-item-content");
+			indiv.classList.add("timeline");
+			if (t.getMinutes() == 0) {
+			  indiv.classList.add("full-hour");
+			  indiv.innerText = t.getHours();
+			} else {
+			  indiv.classList.add("half-hour");    
+			}
+			outdiv.appendChild(indiv);
+			y = ~~((tminutes - startminutes)/granularity);
+			height = ~~(30/granularity);
+			var node = {x: 0, y: y, width: 1, height: height, noMove: true, };
+			grid.addWidget(outdiv, node);
+		  };
+      });  
+	};
+
+  </script>
+</body>
+</html>
